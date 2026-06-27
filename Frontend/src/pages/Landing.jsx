@@ -63,23 +63,21 @@ export default function Landing({ onEnter }) {
 
   return (
     <div style={{ background: "#09090f", minHeight: "100vh", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
-      {/* Navbar */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 40px", borderBottom: "0.5px solid #1e1e2e" }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 2 }}>
           AREN<span style={{ color: "#378ADD" }}>A</span>
         </div>
-        <div style={{ display: "flex", gap: 28 }}>
+        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
           {["Features", "How it works", "Demo"].map(l => (
             <span key={l} style={{ fontSize: 13, color: "#666", cursor: "pointer" }}>{l}</span>
           ))}
+          <button onClick={onEnter} style={{
+            background: "#378ADD", color: "#fff", border: "none",
+            padding: "8px 18px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500,
+          }}>Sign in</button>
         </div>
-        <button onClick={onEnter} style={{
-          background: "#378ADD", color: "#fff", border: "none",
-          padding: "9px 20px", borderRadius: 9, fontSize: 13, cursor: "pointer", fontWeight: 500,
-        }}>Get started</button>
       </nav>
 
-      {/* Hero */}
       <div style={{ textAlign: "center", padding: "80px 32px 48px" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 7,
@@ -87,7 +85,7 @@ export default function Landing({ onEnter }) {
           borderRadius: 20, padding: "6px 16px", fontSize: 12, color: "#85B7EB", marginBottom: 28,
         }}>
           <span style={{ width: 6, height: 6, background: "#1D9E75", borderRadius: "50%", display: "inline-block" }}></span>
-          AI and Machine Learning · Tech Genesis '26
+          AI Personal Assistant
         </div>
 
         <h1 style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.1, marginBottom: 20, letterSpacing: -2 }}>
@@ -110,7 +108,6 @@ export default function Landing({ onEnter }) {
           }}>Watch demo</button>
         </div>
 
-        {/* Agent Feed Box */}
         <div style={{
           background: "#0d0d1a", border: "0.5px solid #1e1e2e",
           borderRadius: 14, maxWidth: 560, margin: "0 auto", overflow: "hidden",
@@ -128,7 +125,6 @@ export default function Landing({ onEnter }) {
         </div>
       </div>
 
-      {/* Features */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, padding: "48px 40px", maxWidth: 800, margin: "0 auto" }}>
         {[
           { icon: "📧", title: "Email agent", desc: "Reads, prioritizes, and drafts replies in your tone. Zero inbox anxiety." },
@@ -150,7 +146,7 @@ export default function Landing({ onEnter }) {
       </div>
 
       <div style={{ textAlign: "center", padding: "24px", borderTop: "0.5px solid #1e1e2e", fontSize: 12, color: "#333" }}>
-        Built by Mohana and Gomathi · Tech Genesis '26 · CSI VIT Chennai
+        ARENA — Adaptive Reasoning &amp; Execution Network Assistant
       </div>
 
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
