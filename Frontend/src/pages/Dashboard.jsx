@@ -78,22 +78,20 @@ function ChatCard() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("http://localhost:8000/api/chat/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          system: "You are ARENA, a smart AI personal assistant. Keep replies short and action-oriented.",
-          messages: nextMessages.map((message) => ({ role: message.role, content: message.text })),
+          message: userMsg,
+          history: nextMessages.map((message) => ({ role: message.role, content: message.text })),
         }),
       });
 
       const data = await response.json();
-      const reply = data.content?.[0]?.text || "Sorry, something went wrong.";
+      const reply = data.reply || "Sorry, something went wrong.";
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Couldn't reach the server. Check your API key." }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "I'm unable to reach the backend server on port 8000." }]);
     }
 
     setLoading(false);

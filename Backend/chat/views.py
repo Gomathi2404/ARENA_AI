@@ -1,85 +1,72 @@
 import os
-import anthropic
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+import json
 
-ARENA_SYSTEM_PROMPT = """You are ARENA (Adaptive Reasoning & Execution Network Assistant), a smart AI personal assistant.
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
-You work like a real human personal assistant who gets paid — you take initiative, remember context, and get things done without being asked twice.
+import google.generativeai as genai
 
-Your personality:
-- Proactive and action-oriented
-- Speak concisely like a real PA — no fluff
-- Occasionally call the user "boss"
-- Give bullet points when listing things
-- Always suggest the next action
+# Configure Gemini once at module load.
+# Set GEMINI_API_KEY in your environment / .env file (never hardcode the key).
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
-Your capabilities:
-- Managing emails (read, summarize, draft replies)
-- Handling calendar (schedule, reschedule, detect conflicts)
-- Tracking tasks (create, update, follow up)
-- Smart reminders with context
+# System instruction shapes ARENA's personality - tweak as needed.
+SYSTEM_INSTRUCTION = (
+    "You are ARENA, a personal AI assistant. You help the user manage email, "
+    "calendar, and tasks. Be concise, direct, and helpful."
+)
 
-Current user context:
-- 14 emails handled today, 4 meetings, 7 pending tasks
-
-Always respond as if you have already been working in the background and know what's going on."""
+model = genai.GenerativeModel(
+    model_name="gemini-2.5-flash",
+    system_instruction=SYSTEM_INSTRUCTION,
+)
 
 
-class ChatView(APIView):
+def _build_history(raw_history):
     """
-    POST /api/chat/
-    Body: { "message": "...", "history": [{"role": "user/assistant", "content": "..."}] }
-    Returns: { "reply": "..." }
+    Convert the frontend's {role, content} list into Gemini's expected
+    format: role must be 'user' or 'model', and content must be a list of parts.
     """
-
-    def post(self, request):
-        user_message = request.data.get("message", "").strip()
-        history = request.data.get("history", [])
-
-        if not user_message:
-            return Response({"error": "Message is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        api_key = settings.ANTHROPIC_API_KEY
-        if not api_key:
-            return Response({"error": "ANTHROPIC_API_KEY not set."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Build message history
-        messages = []
-        for msg in history:
-            role = msg.get("role")
-            content = msg.get("content", "")
-            if role in ("user", "assistant") and content:
-                messages.append({"role": role, "content": content})
-
-        # Add current user message
-        messages.append({"role": "user", "content": user_message})
-
-        try:
-            client = anthropic.Anthropic(api_key=api_key)
-            response = client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1000,
-                system=ARENA_SYSTEM_PROMPT,
-                messages=messages,
-            )
-            reply = response.content[0].text
-            return Response({"reply": reply}, status=status.HTTP_200_OK)
-
-        except anthropic.AuthenticationError:
-            return Response({"error": "Invalid API key."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        except anthropic.RateLimitError:
-            return Response({"error": "Rate limit hit. Try again shortly."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    gemini_history = []
+    for turn in raw_history or []:
+        role = turn.get("role")
+        text = turn.get("content", "")
+        if not text:
+            continue
+        # Gemini uses 'model' instead of 'assistant'
+        gemini_role = "model" if role == "assistant" else "user"
+        gemini_history.append({"role": gemini_role, "parts": [text]})
+    return gemini_history
 
 
-class HealthView(APIView):
-    """GET /api/health/ — check if backend is alive"""
+@csrf_exempt
+@require_http_methods(["POST"])
+def chat_view(request):
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"reply": "Invalid request body."}, status=400)
 
-    def get(self, request):
-        return Response({"status": "ARENA backend is running 🚀"})
+    message = (body.get("message") or "").strip()
+    raw_history = body.get("history", [])
+
+    if not message:
+        return JsonResponse({"reply": "Message cannot be empty."}, status=400)
+
+    if not os.environ.get("GEMINI_API_KEY"):
+        return JsonResponse(
+            {"reply": "Server misconfigured: GEMINI_API_KEY is not set."},
+            status=500,
+        )
+
+    try:
+        chat_session = model.start_chat(history=_build_history(raw_history))
+        response = chat_session.send_message(message)
+        reply_text = response.text
+    except Exception as exc:
+        # Log the real error server-side; keep the client message generic.
+        print(f"[ARENA][Gemini error] {exc}")
+        reply_text = "I ran into an issue reaching the AI model. Please try again."
+
+    return JsonResponse({"reply": reply_text})

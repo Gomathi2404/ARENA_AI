@@ -29,7 +29,7 @@ ROOT_URLCONF = "arena.urls"
 
 CORS_ALLOW_ALL_ORIGINS = True  # restrict in production
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 STATIC_URL = "/static/"
 
