@@ -1,0 +1,372 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        128
+      ],
+      "id": "0f8db182-1e34-4949-adc7-30e756d5a757",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PZr7y3X2H1KylwKc",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an email assistant.\n\nRead the email carefully.\n\nIf the email contains a meeting, appointment, interview, class, or schedule, set calendar.create to true.\n\nExtract:\n- title\n- description\n- date\n- start_time\n- end_time\n\nIf the email asks the user to do something (prepare, submit, finish, remember, complete, etc.), set task.create to true.\n\nToday's date is {{$now.format(\"yyyy-MM-dd\")}}.\n\nConvert all relative dates like today, tomorrow, next Monday, etc.\nto absolute dates in YYYY-MM-DD format.\n\nReturn time in HH:mm:ss.\n\nExtract:\n- title\n- description\n- due_date\n\nIf information is missing, make a reasonable guess.\n\nReturn ONLY valid JSON.\n\n{\n  \"calendar\": {\n    \"create\": false,\n    \"title\": \"\",\n    \"description\": \"\",\n    \"date\": \"\",\n    \"start_time\": \"\",\n    \"end_time\": \"\"\n  },\n  \"task\": {\n    \"create\": false,\n    \"title\": \"\",\n    \"description\": \"\",\n    \"due_date\": \"\"\n  }\n}\n\nEmail:\n\n{{ $json.text }}\n\nIMPORTANT:\nReturn ONLY raw JSON.\nDo NOT wrap the response in ```json.\nDo NOT use markdown.\nDo NOT include any explanation.\nThe first character must be {\nThe last character must be }",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "9524ef10-cc44-48b7-baa5-265333f829fa",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst aiOutput = $input.first().json.text;\n\nreturn [\n  {\n    json: JSON.parse(aiOutput)\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -96
+      ],
+      "id": "b28a3c3b-61da-4ef8-97a0-1fd29ec0c2cf",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "78ffb33f-bdc5-4e54-9601-04fd8404fd0e",
+              "leftValue": "={{ $json.calendar.create }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -96
+      ],
+      "id": "fe89f8a7-b239-4584-bee1-62719b291538",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "mohanadharshini2404@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mohanadharshini2404@gmail.com"
+        },
+        "start": "={{ $json.calendar.date }}T{{ $json.calendar.start_time }}",
+        "end": "={{ $json.calendar.date }}T{{ $json.calendar.end_time }}",
+        "additionalFields": {
+          "description": "={{ $json.calendar.description }}",
+          "summary": "={{ $json.calendar.description }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        -96
+      ],
+      "id": "03d0f4a6-3b58-434c-83f9-c40bcdb7a663",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "kRoGBo1lpc3sO8eH",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "16a0188e-ee2e-4bfc-9e15-8f9639d94c94",
+              "leftValue": "={{ $json.task.create }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        32
+      ],
+      "id": "4f80c2e3-16ab-4c71-b119-ae63ab028870",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "task": "MDg0NDQ3MzA3MzcyMDY4ODgyODI6MDow",
+        "title": "={{ $json.task.title }}",
+        "additionalFields": {
+          "dueDate": "={{ $json.task.due_date }}T00:00:00.000Z",
+          "notes": "={{ $json.task.description }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        32
+      ],
+      "id": "68e612f7-2f11-4f01-b015-3cd737ffb6a6",
+      "name": "Create a task",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "sJTzSMJNxr5VA0T1",
+          "name": "Google Tasks account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "5b1c5ca0-fc72-42ee-bee7-801549d6bb9f",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        48,
+        -96
+      ],
+      "id": "0d9dd618-2c78-4eaa-a018-b6479acc6637",
+      "name": "Webhook",
+      "webhookId": "5b1c5ca0-fc72-42ee-bee7-801549d6bb9f"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1584,
+        -16
+      ],
+      "id": "3b2a6ffd-6d4d-4472-8526-494bacb60e46",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Sync completed\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1792,
+        -16
+      ],
+      "id": "47a5da94-1b70-4021-a498-e8869d7d320f",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "="
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        -96
+      ],
+      "id": "18331552-c131-44e1-959e-1b9fa769f8d1",
+      "name": "Get a message",
+      "webhookId": "e6361b98-a75b-40ca-9264-e4a1759b4f84",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a8WANM2W3cp4ewcc",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "28198aa8-2c0a-401a-8d39-6c24753f4ade",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3fe85c67f9d7bcb6e8b472e3bdaea88ca2bd1a8840520b60e4cc8c8e3efb2209"
+  },
+  "nodeGroups": [],
+  "id": "pqA9ftvG2IkgMJ7Z",
+  "tags": []
+}
