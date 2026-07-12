@@ -1,0 +1,122 @@
+{
+  "name": "Get Emails API",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 20,
+        "filters": {
+          "q": "=category:primary newer_than:30d"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2b600e16-ae74-4b41-8669-b7aa40388ace",
+      "name": "Get many messages",
+      "webhookId": "d5337337-e70b-4cd9-b490-3d6383dc0718",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a8WANM2W3cp4ewcc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      id: item.json.id,\n      subject: item.json.Subject || \"\",\n      from: item.json.From || \"\",\n      to: item.json.To || \"\",\n      date: item.json.Date || \"\",\n      snippet: item.json.snippet || \"\",\n      labels: (item.json.labels || []).map(label => label.name)\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "934a4b40-28f0-4bea-a19f-d4b4afafcba7",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "path": "emails",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7eab4022-aae2-4813-a2d4-1904b4826c83",
+      "name": "Webhook",
+      "webhookId": "73ff77bc-500a-4754-a0ca-b11c469b1f89"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        0
+      ],
+      "id": "2e0b271c-2e10-4e32-934f-3ae656da3148",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e4da67ef-ceb7-43f1-bffc-574c516e1fe8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3fe85c67f9d7bcb6e8b472e3bdaea88ca2bd1a8840520b60e4cc8c8e3efb2209"
+  },
+  "nodeGroups": [],
+  "id": "TYm8BKl2THOX1RsV",
+  "tags": []
+}
